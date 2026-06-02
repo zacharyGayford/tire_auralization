@@ -48,7 +48,8 @@ namespace thread {
 		thread->running = false;
 	}
 
-	char* name_get() {
+	const char* name_get() {
+		if (currentThread == NULL) return "main_thread";
 		return currentThread->name;
 	}
 }

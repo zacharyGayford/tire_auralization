@@ -1,7 +1,10 @@
 #include "log.h"
 
+#include <cstdio>
+#include <sec_api/stdio_s.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <memory.h>
 
 #include "defines.h"
 #include "thread.h"
@@ -29,6 +32,16 @@ namespace log {
 		"fatal"
 	};
 
+	typedef struct Message {
+		Level level;
+		va_list args;
+		const char* fmt;
+		const char* termCodes;
+		const char* name;
+		const char* file;
+		u32 line;
+	} Message;
+
 	// NOTE(zgayford): this is technically not thread safe
 	// but its probably fine
 	internal Level currentLevel = LEVEL_DEBUG;
@@ -54,6 +67,52 @@ namespace log {
 		currentLevel = level;
 	}
 
+	// NOTE(zgayford): there is probably a more intelligent way 
+	// of doing this, but this is fine.
+	internal void message_print(FILE* stream, Message* message) {
+		#define THREAD_NAME_FMT "[%-20.20s]"
+		#define MESSAGE_BUFFER_MAX_LENGTH 1024
+		// NOTE(zgayford): +1 so there is always null term
+		char messageBuffer[MESSAGE_BUFFER_MAX_LENGTH + 1];
+		memset(messageBuffer, 0, MESSAGE_BUFFER_MAX_LENGTH + 1);
+		vsnprintf(messageBuffer, MESSAGE_BUFFER_MAX_LENGTH, message->fmt, message->args);
+
+		u32 messageConfiguration = 0;
+		messageConfiguration |= (message->termCodes != NULL) << 2;
+		messageConfiguration |= (message->name      != NULL) << 1;
+		messageConfiguration |= (message->file      != NULL) << 0;
+		switch (messageConfiguration) {
+			case 0b000: // no term codes, no name & no file info
+			case 0b001: // no term codes, no name & file info
+				fprintf(stream, THREAD_NAME_FMT " %s\n", 
+						thread::name_get(), messageBuffer);
+				break;
+			case 0b010: // no term codes, name & no file info
+				fprintf(stream, THREAD_NAME_FMT " %s: %s\n", 
+						thread::name_get(), message->name, messageBuffer);
+				break;
+			case 0b011: // no term codes, name & file info
+				fprintf(stream, THREAD_NAME_FMT " %s(%s: %d): %s\n", 
+						thread::name_get(), message->name, message->file, message->line, messageBuffer);
+				break;
+			case 0b100: // term codes, no name & no file info
+			case 0b101: // term codes, no name & file info
+				fprintf(stream, "%s" THREAD_NAME_FMT " %s" TERM_COLOR_RESET "\n",
+						message->termCodes, thread::name_get(), messageBuffer);
+				break;
+			case 0b110: // term codes, name & no file info
+				fprintf(stream, "%s" THREAD_NAME_FMT " %s: %s" TERM_COLOR_RESET "\n",
+						message->termCodes, thread::name_get(), message->name, messageBuffer);
+				break;
+			case 0b111: // term codes, name & file info
+				fprintf(stream, "%s" THREAD_NAME_FMT " %s(%s: %d): %s" TERM_COLOR_RESET "\n",
+						message->termCodes, thread::name_get(), message->name, message->file, message->line, messageBuffer);
+				break;
+		}
+		#undef THREAD_NAME_FMT
+		#undef MESSAGE_BUFFER_MAX_LENGTH
+	}
+
 	void _message_log(Level level, const char* fmt, ...) {
 		if (!initialized) return;
 		__builtin_va_list args;
@@ -63,37 +122,27 @@ namespace log {
 			va_end(args);
 			return;
 		}
+		
+		FILE* stream = stdout;
+		Message message = {
+			.level = level,
+			.args = args,
+			.fmt = fmt,
+			.termCodes = LEVEL_COLORS[level],
+			.name = NULL,
+			.file = NULL,
+			.line = 0
+		};
 
-		switch (level) {
-			case LEVEL_FATAL:
-			case LEVEL_ERROR:
-				fprintf(stderr, "%s[%-10.10s] %s:", LEVEL_COLORS[level], thread::name_get(), LEVEL_STRINGS[level]);
-				vfprintf(stderr, fmt, args);
-				fprintf(stderr, TERM_COLOR_RESET "\n");
+		if (level >= LEVEL_ERROR) {
+			message.name = LEVEL_STRINGS[level];
+			stream = stderr;
+		}
 
-				if (logFile != NULL) {
-					fprintf(logFile, "[%-10.10s] %s:", thread::name_get(), LEVEL_STRINGS[level]);
-					vfprintf(logFile, fmt, args);
-					fprintf(logFile, "\n");
-					fflush(logFile);
-				}
-				break;
-			case LEVEL_WARN:
-			case LEVEL_AMBIGUOUS:
-			case LEVEL_INFO:
-			case LEVEL_DEBUG:
-			default:
-				fprintf(stdout, "%s[%-10.10s]", LEVEL_COLORS[level], thread::name_get());
-				vfprintf(stdout, fmt, args);
-				fprintf(stdout, TERM_COLOR_RESET "\n");
-
-				if (logFile != NULL) {
-					fprintf(logFile, "[%-10.10s]", thread::name_get());
-					vfprintf(logFile, fmt, args);
-					fprintf(logFile, "\n");
-					fflush(logFile);
-				}
-				break;
+		message_print(stream, &message);
+		if (logFile != NULL) {
+			message.termCodes = NULL;
+			message_print(logFile, &message);
 		}
 
 		va_end(args);
@@ -109,15 +158,24 @@ namespace log {
 			return;
 		}
 
-		fprintf(stderr, "%s[%-10.10s] %s(%s: %d):", LEVEL_COLORS[level], thread::name_get(), LEVEL_STRINGS[level], file, line);
-		vfprintf(stderr, fmt, args);
-		fprintf(stderr, TERM_COLOR_RESET "\n");
+		FILE* stream = stdout;
+		Message message = {
+			.level = level,
+			.args = args,
+			.fmt = fmt,
+			.termCodes = LEVEL_COLORS[level],
+			.name = LEVEL_STRINGS[level],
+			.file = file,
+			.line = line 
+		};
 
+		if (level >= LEVEL_ERROR)
+			stream = stderr;
+
+		message_print(stream, &message);
 		if (logFile != NULL) {
-			fprintf(logFile, "[%-10.10s] %s(%s: %d):", thread::name_get(), LEVEL_STRINGS[level], file, line);
-			vfprintf(logFile, fmt, args);
-			fprintf(logFile, "\n");
-			fflush(logFile);
+			message.termCodes = NULL;
+			message_print(logFile, &message);
 		}
 
 		va_end(args);
@@ -128,15 +186,20 @@ namespace log {
 		__builtin_va_list args;
 		va_start(args, fmt);
 
-		fprintf(stderr, "%s[%-10.10s] assert(%s: %d):", LEVEL_COLORS[LEVEL_FATAL], thread::name_get(), file, line);
-		vfprintf(stderr, fmt, args);
-		fprintf(stderr, TERM_COLOR_RESET "\n");
+		Message message = {
+			.level = LEVEL_FATAL,
+			.args = args,
+			.fmt = fmt,
+			.termCodes = LEVEL_COLORS[LEVEL_FATAL],
+			.name = "assert",
+			.file = file,
+			.line = line 
+		};
 
+		message_print(stderr, &message);
 		if (logFile != NULL) {
-			fprintf(logFile, "[%-10.10s] assert(%s: %d): %s\n\t", thread::name_get(), file, line, condition);
-			vfprintf(logFile, fmt, args);
-			fprintf(logFile, "\n");
-			fflush(logFile);
+			message.termCodes = NULL;
+			message_print(logFile, &message);
 		}
 
 		va_end(args);

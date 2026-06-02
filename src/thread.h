@@ -11,9 +11,9 @@ namespace thread {
 	#define THREAD_NAME_MAX_LENGTH 128
 	Thread* create(allocator::Arena* arena, const char* name, ThreadFunction fcn);
 	void destroy(Thread* thread);
-	void run(Thread* thread);
+	void run(Thread* thread, void* data);
 	void join(Thread* thread);
-	char* name_get();
+	const char* name_get();
 
 	// TODO(zgayford): going to need this later most likely
 	/*

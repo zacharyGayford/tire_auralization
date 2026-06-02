@@ -3,7 +3,7 @@
 
 #define APPLICATION_NAME "tire auralization"
 
-#if defined(__clang__) || defined(__GNUC__)
+#if defined(__clang__)
 #	define static_assert _Static_assert
 #else
 #	define static_assert static_assert
@@ -69,18 +69,27 @@ static_assert(sizeof(b32) == 4, "expected b32 to be 4 bytes");
 #define I32_MAX (2147483647)
 #define I64_MAX (9223372036854775807LL)
 
-#define TRUE 1
-#define FALSE 0
 #ifndef NULL
 #	define NULL 0
-#endif
+#endif 
 
 #define OUT
+
+// NOTE(zgayford): for functions, signifies I'm meaning to use the 
+// static keyword for internal linkage
+#define internal static
 
 typedef struct Slice {
 	void* ptr;
 	u64 length;
 } Slice;
+
+typedef union v2i {
+	struct { i32 x, y; };
+	struct { i32 u, v; };
+	struct { i32 width, height; };
+	i32 e[2];
+} v2i;
 
 #define CLAMP(value, max, min) (((value) <= (min)) ? (min) : ((value) >= (max)) ? (max) : (value))
 #define MIN(x, y) ((x) < (y) ? (x) : (y))

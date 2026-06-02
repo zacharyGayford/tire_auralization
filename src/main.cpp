@@ -7,12 +7,13 @@
 #include "allocator.h"
 #include "thread.h"
 #include "log.h"
+#include "audio.h"
 
 using thread::Thread;
 
 int main() {
+	log::init(log::LEVEL_DEBUG, "out.log");
 	allocator::Arena* staticArena = allocator::arena_create(MEBIBYTES(10));
-
 	window::WindowCreateInfo windowCreateInfo = {0};
 	windowCreateInfo.dimensions = { 500, 500 };
 	windowCreateInfo.title = "tire_auralization";
@@ -31,8 +32,12 @@ int main() {
 	}
 
 	Thread* rendererThread = thread::create(staticArena, "renderer_thread", renderer::main);
-	// Thread* audioThread    = thread::create(staticArena, "audio_thread", audio::main);
+	Thread* audioThread    = thread::create(staticArena, "audio_thread", audio::main);
 
+	thread::run(rendererThread, renderer);
+	thread::run(audioThread, NULL);
+
+	log_debug("hello from the main thread");
 	bool running = true;
 	while (running) {
 		window::events_poll();

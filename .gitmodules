@@ -1,0 +1,9 @@
+[submodule "ext/glfw"]
+	path = ext/glfw
+	url = https://github.com/glfw/glfw
+[submodule "ext/openal-soft"]
+	path = ext/openal-soft
+	url = https://github.com/kcat/openal-soft
+[submodule "ext/imgui"]
+	path = ext/imgui
+	url = https://github.com/ocornut/imgui

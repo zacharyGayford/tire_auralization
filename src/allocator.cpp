@@ -41,6 +41,6 @@ namespace allocator {
 	}
 
 	void arena_flush(Arena* arena) {
-		arena->position = 0;
+		atomic_store(&arena->position, 0);
 	}
 }

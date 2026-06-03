@@ -3,9 +3,6 @@
 
 #include "defines.h"
 
-#define assert(condition, fmt, ...) if (!(condition)) {log::_assert_failure_log_with_location(__FILE__, __LINE__, #condition, fmt, ##__VA_ARGS__); *(volatile int*)0 = 0;}
-#define unimplemented() log::_message_log_with_location(log::LEVEL_AMBIGUOUS, __FILE__, __LINE__, "unimplemented")
-
 #define log_debug(fmt, ...) log::_message_log(log::LEVEL_DEBUG, fmt, ##__VA_ARGS__)
 #define log_info(fmt, ...) log::_message_log(log::LEVEL_INFO, fmt, ##__VA_ARGS__)
 #define log_ambiguous(fmt, ...) log::_message_log(log::LEVEL_AMBIGUOUS, fmt, ##__VA_ARGS__)

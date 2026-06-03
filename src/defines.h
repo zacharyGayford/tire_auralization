@@ -73,6 +73,19 @@ static_assert(sizeof(b32) == 4, "expected b32 to be 4 bytes");
 #	define NULL 0
 #endif 
 
+#if defined(__has_builtin)
+#	if __has_builtin(__builtin_unreachable)
+#		define unreachable() log::_message_log_with_location(log::LEVEL_AMBIGUOUS, __FILE__, __LINE__, "unreachable: how did we get here?"); __builtin_unreachable()
+#	endif
+#elif defined(_MSC_VER)
+#	define unreachable() log::_message_log_with_location(log::LEVEL_AMBIGUOUS, __FILE__, __LINE__, "unreachable: how did we get here?"); __assume(0)
+#else
+#	define unreachable() log::_message_log_with_location(log::LEVEL_AMBIGUOUS, __FILE__, __LINE__, "unreachable: how did we get here?")
+#endif
+
+#define assert(condition, fmt, ...) if (!(condition)) {log::_assert_failure_log_with_location(__FILE__, __LINE__, #condition, fmt, ##__VA_ARGS__); *(volatile int*)0 = 0;}
+#define unimplemented() log::_message_log_with_location(log::LEVEL_AMBIGUOUS, __FILE__, __LINE__, "unimplemented")
+
 #define OUT
 
 // NOTE(zgayford): for functions, signifies I'm meaning to use the 

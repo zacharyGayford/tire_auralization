@@ -6,10 +6,11 @@
 namespace allocator {
 	typedef struct Arena Arena;
 	Arena* arena_create(u64 capacity);
+	Arena* arena_create(Arena* arena, u64 capacity);
 	void arena_destroy(Arena* arena);
-
 	void* arena_allocate(Arena* arena, u64 size);
 	void arena_flush(Arena* arena);
+	u64 arena_bytes_written_get(Arena* arena);
 }
 
 #endif // ALLOCATOR_H

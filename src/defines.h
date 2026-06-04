@@ -97,13 +97,6 @@ typedef struct Slice {
 	u64 length;
 } Slice;
 
-typedef union v2i {
-	struct { i32 x, y; };
-	struct { i32 u, v; };
-	struct { i32 width, height; };
-	i32 e[2];
-} v2i;
-
 #define CLAMP(value, max, min) (((value) <= (min)) ? (min) : ((value) >= (max)) ? (max) : (value))
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define MAX(x, y) ((x) > (y) ? (x) : (y))

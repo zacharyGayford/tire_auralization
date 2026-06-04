@@ -8,18 +8,19 @@
 #include "defines.h"
 #include "log.h"
 #include "allocator.h"
+#include "math.h"
 
 namespace window {
 	static std::atomic<bool> glfwInitialized = false;
 
 	typedef struct Window {
 		GLFWwindow* handle;
-		v2i dimensions;
+		v2<i32> dimensions;
 	} Window;
 
 	internal void glfw_framebuffer_resize_callback(GLFWwindow* w, int width, int height) {
 		Window* window = (Window*)glfwGetWindowUserPointer(w);
-		window->dimensions = (v2i) { .width = width, .height = height };
+		window->dimensions = (v2<i32>) { .width = width, .height = height };
 	}
 
 	internal void glfw_key_callback(GLFWwindow* w, int key, int scancode, int action, int mods) {
@@ -90,7 +91,7 @@ namespace window {
 		glfwTerminate();
 	}
 
-	v2i dimensions_get(Window* window) {
+	v2<i32> dimensions_get(Window* window) {
 		return window->dimensions;
 	}
 

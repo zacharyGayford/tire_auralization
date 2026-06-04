@@ -100,8 +100,8 @@ namespace container {
 				u64 newHead = head + 1;
 
 				if (atomic_compare_exchange_weak(&buffer->head, &oldHead, newHead)) {
-					memcpy(element, &buffer->data[head*buffer->elementSize], buffer->elementSize);
-					atomic_store(&buffer->epoch[i], head + buffer->elementNum);
+					memcpy(element, &buffer->data[oldHead*buffer->elementSize], buffer->elementSize);
+					atomic_store(&buffer->epoch[i], oldHead + buffer->elementNum);
 					return true;
 				} else
 					continue;

@@ -8,12 +8,21 @@
 #include "thread.h"
 #include "log.h"
 #include "audio.h"
+#include "container.h"
 
 using thread::Thread;
 
+typedef struct Temp {
+	u8 a;
+	u32 b;
+	u64 c;
+} Temp;
+
 int main() {
 	log::init(log::LEVEL_DEBUG, "out.log");
-	allocator::Arena* staticArena = allocator::arena_create(MEBIBYTES(10));
+	allocator::Arena* staticArena = allocator::arena_create(MEBIBYTES(16));
+	allocator::Arena* volatileArena = allocator::arena_create(MEBIBYTES(16));
+
 	window::WindowCreateInfo windowCreateInfo = {0};
 	windowCreateInfo.dimensions = { 500, 500 };
 	windowCreateInfo.title = "tire_auralization";
@@ -25,6 +34,8 @@ int main() {
 
 	renderer::RendererCreateInfo rendererCreateInfo = {0};
 	rendererCreateInfo.window = window;
+	rendererCreateInfo.renderCommandBufferByteSize = KIBIBYTES(16);
+	rendererCreateInfo.framesInFlight = 3;
 	renderer::Renderer* renderer = renderer::create(staticArena, rendererCreateInfo);
 	if (!renderer) {
 		log_fatal("unable to create renderer");
@@ -37,6 +48,10 @@ int main() {
 	thread::run(rendererThread, renderer);
 	thread::run(audioThread, NULL);
 
+	renderer::RenderCommandBuffer* buffer = renderer::render_command_buffer_create(volatileArena, rendererCreateInfo.renderCommandBufferByteSize);
+	renderer::render_command_buffer_quad_push(buffer, {-0.5, -0.5}, {-0.5, 0.5}, {0.5, -0.5}, {0.5, 0.5});
+	renderer::render_command_buffer_publish(renderer, buffer);
+
 	log_debug("hello from the main thread");
 	bool running = true;
 	while (running) {
@@ -44,5 +59,4 @@ int main() {
 	}
 
 	window::destroy_all(&window, 1);
-
 }

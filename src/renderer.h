@@ -26,21 +26,20 @@ namespace renderer {
 		TEXT_ANCHOR_POINT_CENTER
 	} TextAnchorPoint;
 
-	typedef allocator::Arena RenderCommandBuffer;
+	typedef struct RenderCommandBuffer RenderCommandBuffer;
 
 	Renderer* create(allocator::Arena* arena, RendererCreateInfo createInfo);
-	void* main(void* data);
+	void destroy(Renderer** renderer);
+	void render(Renderer* renderer, RenderCommandBuffer* commandBuffer);
 
-	RenderCommandBuffer* render_command_buffer_create(allocator::Arena* arena, u32 byteCapacity);
-	void render_command_buffer_publish(Renderer* renderer, RenderCommandBuffer* commandBuffer);
-	void render_command_buffer_quad_push(RenderCommandBuffer* buffer, v2<f32> p[4]);
-	void render_command_buffer_quad_push(RenderCommandBuffer* buffer, v2<f32> bottomLeft, v2<f32> bottomRight, v2<f32> topLeft, v2<f32> topRight);
-	void render_command_buffer_textured_quad_push(RenderCommandBuffer* buffer, v2<f32> p[4]);
-	void render_command_buffer_textured_quad_push(RenderCommandBuffer* buffer, v2<f32> bottomLeft, v2<f32> bottomRight, v2<f32> topLeft, v2<f32> topRight);
-	void render_command_buffer_circle_push(RenderCommandBuffer* buffer, f32 x, f32 y, f32 radius);
+	RenderCommandBuffer* render_command_buffer_create(allocator::Arena* arena, u64 commandCapacity);
+	void render_command_buffer_quad_push(RenderCommandBuffer* buffer, v2<f32> p[2]);
+	void render_command_buffer_quad_push(RenderCommandBuffer* buffer, v2<f32> bottomLeft, v2<f32> topRight);
+	void render_command_buffer_textured_quad_push(RenderCommandBuffer* buffer, v2<f32> p[2]);
+	void render_command_buffer_textured_quad_push(RenderCommandBuffer* buffer, v2<f32> bottomLeft, v2<f32> topRight);
 	void render_command_buffer_circle_push(RenderCommandBuffer* buffer, v2<f32> center, f32 radius);
-	void render_command_buffer_text_push(RenderCommandBuffer* buffer, char* text, f32 x, f32 y, TextAnchorPoint anchor);
-	void render_command_buffer_clear(RenderCommandBuffer* buffer, v3<f32> color);
+	void render_command_buffer_fill_set(RenderCommandBuffer* buffer, v3<f32> fill);
+	void render_command_buffer_stroke_set(RenderCommandBuffer* buffer, v3<f32> stroke);
 }
 
 #endif // RENDERER_H

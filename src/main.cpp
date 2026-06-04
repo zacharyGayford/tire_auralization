@@ -42,20 +42,19 @@ int main() {
 		return 2;
 	}
 
-	Thread* rendererThread = thread::create(staticArena, "renderer_thread", renderer::main);
-	Thread* audioThread    = thread::create(staticArena, "audio_thread", audio::main);
+	Thread* audioThread = thread::create(staticArena, "audio_thread", audio::main);
 
-	thread::run(rendererThread, renderer);
 	thread::run(audioThread, NULL);
 
 	renderer::RenderCommandBuffer* buffer = renderer::render_command_buffer_create(volatileArena, rendererCreateInfo.renderCommandBufferByteSize);
-	renderer::render_command_buffer_quad_push(buffer, {-0.5, -0.5}, {-0.5, 0.5}, {0.5, -0.5}, {0.5, 0.5});
-	renderer::render_command_buffer_publish(renderer, buffer);
+	renderer::render_command_buffer_fill_set(buffer, {1.0f, 1.0f, 1.0f});
+	renderer::render_command_buffer_quad_push(buffer, {-0.5, -0.5}, {0.5, 0.5});
 
 	log_debug("hello from the main thread");
 	bool running = true;
-	while (running) {
+	while (!window::should_close(window)) {
 		window::events_poll();
+		renderer::render(renderer, buffer);
 	}
 
 	window::destroy_all(&window, 1);

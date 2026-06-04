@@ -16,6 +16,7 @@ namespace window {
 	void destroy_all(Window** window, u32 numWindows);
 	v2<i32> dimensions_get(Window* window);
 	u32 opengl_init(Window* window);
+	void buffers_swap(Window* window);
 	void close(Window* window);
 	bool should_close(Window* window);
 	void events_poll();
